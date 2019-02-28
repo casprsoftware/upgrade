@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Upgrade.Provider;
 
 namespace Upgrade
 {
@@ -8,7 +9,7 @@ namespace Upgrade
         public static IServiceCollection AddUpgrade(this IServiceCollection services, Action<UpgradeOptions> configure)
         {
             services.AddTransient<UpgradeManager>();
-            //services.AddTransient<IDbProvider, SqlDbProvider>();
+            services.AddTransient<IDbProvider, SqlDbProvider>();
             services.Configure(configure);
 
             return services;

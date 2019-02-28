@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Provider\" />
+  </ItemGroup>
+
 </Project>
