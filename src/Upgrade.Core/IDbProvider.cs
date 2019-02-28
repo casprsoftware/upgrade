@@ -18,7 +18,7 @@ namespace Upgrade
         /// </summary>
         /// <param name="version">The schema version</param>
         /// <returns></returns>
-        Task SetSchemaVersionAsync(string version);
+        Task SetSchemaVersionAsync(int version);
 
         /// <summary>
         /// Execute SQL Script

@@ -73,7 +73,7 @@ namespace Upgrade
                 throw new ArgumentNullException(nameof(options));
             }
 
-            if (string.IsNullOrWhiteSpace(options.Version))
+            if (options.Version < 0)
             {
                 throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.Version));
             }

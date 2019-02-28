@@ -2,7 +2,7 @@ namespace Upgrade
 {
     public class UpgradeOptions
     {
-        public string Version { get; set; } = "0.0.0";
+        public int Version { get; set; }
 
         public string ConnectionString { get; set; }
 

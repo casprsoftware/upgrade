@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Upgrade.Core", "src\Upgrade
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Upgrade.Console", "src\Upgrade.Console\Upgrade.Console.csproj", "{806A7FF0-83C7-4C06-A3AE-B272ED4D8D69}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Upgrade.Core.Test", "test\Upgrade.Core.Test\Upgrade.Core.Test.csproj", "{C9338C69-5C55-4CC9-98E4-5BF65679CC52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{806A7FF0-83C7-4C06-A3AE-B272ED4D8D69}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{806A7FF0-83C7-4C06-A3AE-B272ED4D8D69}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{806A7FF0-83C7-4C06-A3AE-B272ED4D8D69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9338C69-5C55-4CC9-98E4-5BF65679CC52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9338C69-5C55-4CC9-98E4-5BF65679CC52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9338C69-5C55-4CC9-98E4-5BF65679CC52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9338C69-5C55-4CC9-98E4-5BF65679CC52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
