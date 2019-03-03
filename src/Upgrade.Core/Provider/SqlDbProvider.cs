@@ -25,17 +25,21 @@ namespace Upgrade.Provider
 
         public Task<VersionInfo> GetSchemaVersionAsync()
         {
-            throw new NotImplementedException();
+            
+            //throw new NotImplementedException();
+            return Task.FromResult<VersionInfo>(null);
         }
 
         public Task SetSchemaVersionAsync(int version)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         public Task ExecuteSqlAsync(string sql)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return Task.CompletedTask;         
         }
 
         #endregion
