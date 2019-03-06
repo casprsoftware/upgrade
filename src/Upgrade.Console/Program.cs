@@ -32,7 +32,15 @@ namespace Upgrade
                         .GetAwaiter()
                         .GetResult();
 
-                    Console.WriteLine("Current version is {0}. Changed at (UTC) {1}", versionInfo.Id, versionInfo.TimeUTC);
+                    if (versionInfo!=null)
+                    {
+                        Console.WriteLine("Current version is {0}. Changed at (UTC) {1}", versionInfo.Id, versionInfo.TimeUTC);
+                    }
+                    else
+                    {
+                        Console.WriteLine("No version info in database.");
+                    }
+                    
                 }
                 else
                 {
@@ -54,8 +62,9 @@ namespace Upgrade
 
             ((IDisposable)provider).Dispose();
 
-            
+#if DEBUG
             Console.Read();
+#endif
         }
 
         #region Private Methods

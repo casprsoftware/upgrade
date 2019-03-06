@@ -1,2 +1,2 @@
 alter table One
-add Rating int
+add Rating int not null
