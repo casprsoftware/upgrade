@@ -141,13 +141,33 @@ Files: {Files}", string.Join(", ", files.Select(f=>f.ToString())));
             }            
         }
 
-        public Task<VersionInfo> GetVersionAsync()
+        public async Task<VersionInfo> GetVersionAsync()
         {
-            ValidateOptions(_options);
+            using (_logger.BeginScope("Get Version"))
+            {
+                ValidateOptions(_options);
 
-            _logger.LogDebug("Get current version of database");
+                _logger.LogInformation("STARTED.");
 
-            return _dbProvider.GetSchemaVersionAsync();
+                try
+                {
+                    var versionInfo = await _dbProvider.GetSchemaVersionAsync();
+                    if (versionInfo==null)
+                    {
+                        _logger.LogWarning("No version info.");
+                        _logger.LogInformation("DONE.");
+                        return null;
+                    }
+                    _logger.LogInformation("Version: {Version}, Update Time: {Time}", versionInfo.Id, versionInfo.TimeUTC);
+                    _logger.LogInformation("DONE.");
+                    return versionInfo;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError("An error: {Error}", exception.Message);
+                    throw;
+                }
+            }
         }
 
         #endregion

@@ -2,7 +2,7 @@
   "profiles": {
     "Upgrade.Console": {
       "commandName": "Project",
-      "commandLineArgs": "--version=1 --connectionString=test --directory=c:\\Users\\miro\\source\\repos\\Upgrade\\sql\\ExampleVersions\\ --debug=true"
+      "commandLineArgs": "--getVersionInfo=true --connectionString=test --directory=c:\\Users\\miro\\source\\repos\\Upgrade\\sql\\ExampleVersions\\ --debug=true"
     }
   }
 }

@@ -10,5 +10,10 @@ namespace Upgrade
 
         // ReSharper disable once InconsistentNaming
         public DateTime TimeUTC { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Id} {TimeUTC:G}";
+        }
     }
 }
