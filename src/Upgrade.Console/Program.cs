@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,11 +11,82 @@ namespace Upgrade
 {
     class Program
     {
+        public const string FullName = "SQL Upgrade Tool";
+        //public const string CommandInfoName = "info";
+        //public const string CommandRunName = "run";
 
+        //https://blog.terribledev.io/Parsing-cli-arguments-in-dotnet-core-Console-App/
         static void Main(string[] args)
         {
-            Console.Title = "Upgrade";
+            Console.Title = FullName;
 
+            var assemblyName = Assembly.GetExecutingAssembly().GetName();
+
+            var app = new CommandLineApplication();
+            app.FullName = FullName;
+            app.Name = assemblyName.Name + ".dll";            
+            app.VersionOption("-v | --version", "v"+assemblyName.Version.ToString());
+            app.HelpOption("-? | -h | --help");
+            app.ExtendedHelpText = "Author: Miro Bozik, http://mirobozik.com";            
+
+            app.Command("info", config =>
+            {
+                config.Description = "Get database info (current version, last upgrade time)";
+                config.HelpOption("-? | -h | --help");
+                var connectionStringArg = config.Argument("connection-string", "Connection string for database connection");
+                
+                config.OnExecute(() =>
+                {                    
+                    if (string.IsNullOrEmpty(connectionStringArg.Value))
+                    {
+                        Console.WriteLine("No connection string found.");
+                        app.ShowHelp("info");
+                        return 1;
+                    }
+
+                    Console.WriteLine("ConnectionString={0}", connectionStringArg.Value);
+                    return 0;
+                });
+            });
+
+            app.Command("run", config =>
+            {
+                config.Description = "Run database upgrade to version";
+                config.HelpOption("-? | -h | --help");
+                
+                var targetVersion = config.Argument("target-version", "Target version to upgrade database");
+                var connectionString = config.Argument("connection-string", "Connection string to database");
+                var directory = config.Argument("directory", "Directory path with sql scripts");
+                
+                config.OnExecute(() =>
+                {
+                    if (string.IsNullOrEmpty(targetVersion.Value) 
+                        || string.IsNullOrEmpty(connectionString.Value)
+                        || string.IsNullOrEmpty(directory.Value))
+                    {
+                        app.ShowHelp("run");
+                        return 1;
+                    }
+
+                    Console.WriteLine(targetVersion.Value);
+                    Console.WriteLine(connectionString.Value);
+                    Console.WriteLine(directory.Value);
+
+                    return 0;
+                });
+            });
+
+            if (args != null && args.Length > 0)
+            {
+                app.Execute(args);
+            }
+            else
+            {
+                app.ShowHelp();
+            }
+            
+
+            /*
             var provider = BuildServiceProvider(args);
             var options = provider
                 .GetRequiredService<IOptions<ConsoleOptions>>()
@@ -69,6 +141,7 @@ namespace Upgrade
 #if DEBUG
             Console.Read();
 #endif
+*/
         }
 
         #region Private Methods
