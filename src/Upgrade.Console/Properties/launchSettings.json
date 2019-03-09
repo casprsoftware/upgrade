@@ -2,7 +2,7 @@
   "profiles": {
     "Upgrade.Console": {
       "commandName": "Project",
-      "commandLineArgs": "--getVersionInfo=true --connectionString=test --directory=c:\\Users\\miro\\source\\repos\\Upgrade\\sql\\ExampleVersions\\ --debug=true"
+      "commandLineArgs": "--getVersionInfo=true --connectionString=\"Server=tcp:localhost,1433;Database=WebApp;Persist Security Info=False;User ID=sa;Password=Sa123456#;MultipleActiveResultSets=True;TrustServerCertificate=False;Connection Timeout=30;\" --directory=c:\\Users\\miro\\source\\repos\\Upgrade\\sql\\ExampleVersions\\ --debug=true"
     }
   }
 }
