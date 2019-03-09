@@ -4,6 +4,6 @@
     {
         public bool GetVersionInfo { get; set; }
 
-        public bool IsDebugEnabled { get; set; }
+        public bool Version { get; set; }
     }
 }

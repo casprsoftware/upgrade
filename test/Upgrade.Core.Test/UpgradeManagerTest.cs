@@ -11,7 +11,7 @@ namespace Upgrade.Core.Test
         public async Task UpgradeToVersion()
         {
             var options = new UpgradeOptions();
-            options.Version = 1;
+            options.TargetVersion = 1;
             options.ConnectionString = "test";
             options.Directory = "./scripts/";
 

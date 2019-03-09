@@ -45,19 +45,14 @@ namespace Upgrade
 
             using (_logger.BeginScope("Upgrade"))
             {
-                _logger.LogDebug(@"with settings:
-- ConnectionString: {ConnectionString}
-- Directory: {Directory}
-- Version: {Version}
-- StartFromVersion: {StartFromVersion}
-- StartFromFile: {StartFromFile}",
-                    _options.ConnectionString,
-                    _options.Directory,
-                    _options.Version, 
-                    _options.StartFromVersion,
-                    _options.StartFromFile);
+                _logger.LogDebug($@"with options:
+- {nameof(_options.ConnectionString)}: '{_options.ConnectionString}'
+- {nameof(_options.Directory)}: '{_options.Directory}'
+- {nameof(_options.TargetVersion)}: {_options.TargetVersion}
+- {nameof(_options.StartVersion)}: {_options.StartVersion}
+- {nameof(_options.StartFile)}: {_options.StartFile}");
 
-                int targetVersion = _options.Version;
+                int targetVersion = _options.TargetVersion;
                 string versionsDirectory = _options.Directory.TrimEnd(Path.DirectorySeparatorChar);
                 int currentVersion;
                 int startFromVersion = 1;
@@ -80,10 +75,10 @@ namespace Upgrade
                     _logger.LogWarning("No version info in database.");
                 }
 
-                if (_options.StartFromVersion.HasValue && _options.StartFromFile.HasValue)
+                if (_options.StartVersion.HasValue && _options.StartFile.HasValue)
                 {
-                    startFromVersion = _options.StartFromVersion.Value;
-                    startFromFile = _options.StartFromFile.Value;
+                    startFromVersion = _options.StartVersion.Value;
+                    startFromFile = _options.StartFile.Value;
                 }
 
                 // Load all versions
@@ -181,9 +176,9 @@ Files: {Files}", string.Join(", ", files.Select(f=>f.ToString())));
                 throw new ArgumentNullException(nameof(options));
             }
 
-            if (options.Version < 0)
+            if (options.TargetVersion < 0)
             {
-                throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.Version));
+                throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.TargetVersion));
             }
 
             if (string.IsNullOrWhiteSpace(options.ConnectionString))

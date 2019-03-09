@@ -23,7 +23,11 @@ namespace Upgrade
 
             try
             {
-                //ValidateOptions(options);
+                if (options.Version)
+                {
+                    Console.WriteLine(Assembly.GetExecutingAssembly().GetName().Version);
+                    return;
+                }
 
                 if (options.GetVersionInfo)
                 {
@@ -75,6 +79,7 @@ namespace Upgrade
             configurationBuilder.AddCommandLine(args, new Dictionary<string, string>
             {
                 {"-v", "version"},
+                {"-t", "targetVersion"},
                 {"-c", "connectionString"},
                 {"-d", "directory"},
                 {"-i", "getVersionInfo"}
