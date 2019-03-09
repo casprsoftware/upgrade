@@ -42,6 +42,7 @@ namespace Upgrade.Provider
             var exists = ExistsTable();
             if (!exists)
             {
+                _logger.LogDebug("Table '{TableName}' doesn't exist in database", TableName);
                 return Task.FromResult<VersionInfo>(null);
             }
 
@@ -69,13 +70,59 @@ ORDER BY TimeUTC DESC";
 
         public Task SetSchemaVersionAsync(int version)
         {
-            //throw new NotImplementedException();
+            if (version == 0)
+            {
+                throw new ArgumentException("Version must be great than zero.", nameof(version));
+            }
+
+            var exists = ExistsTable();
+            if (!exists)
+            {
+                CreateTable();
+            }
+
+            var connection = GetOrCreateConnection();
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandType = CommandType.Text;
+
+                var paramId = cmd.CreateParameter();
+                paramId.ParameterName = "Id";
+                paramId.Value = version;
+                cmd.Parameters.Add(paramId);
+
+                var paramTime = cmd.CreateParameter();
+                paramTime.ParameterName = "Time";
+                paramTime.Value = DateTime.UtcNow;
+                cmd.Parameters.Add(paramTime);
+
+                cmd.CommandText = $"INSERT INTO {TableName} (Id, TimeUTC) VALUES (@Id, @Time)";
+
+                var result = cmd.ExecuteNonQuery();
+                if (result==0)
+                {
+                    throw new Exception("cannot set version");
+                }
+            }
+
             return Task.CompletedTask;
         }
 
         public Task ExecuteSqlAsync(string sql)
         {
-            //throw new NotImplementedException();
+            if (string.IsNullOrEmpty(sql))
+            {
+                throw new ArgumentException("Value cannot be null or empty.", nameof(sql));
+            }
+
+            var connection = GetOrCreateConnection();
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = sql;
+
+                cmd.ExecuteNonQuery();                
+            }
             return Task.CompletedTask;         
         }
 
@@ -119,6 +166,30 @@ WHERE tbls.TABLE_NAME = @TableName";
                 }                
             }
             return exists;
+        }
+
+        private void CreateTable()
+        {            
+            var connection = GetOrCreateConnection();
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandType = CommandType.Text;              
+                cmd.CommandText = $@"
+-- Table Versions
+CREATE TABLE {TableName} (
+	Id int NOT NULL,
+	TimeUTC datetime NOT NULL,
+
+	CONSTRAINT [PK_Versions] PRIMARY KEY (Id)
+)
+
+-- Index on column TimeUTC
+CREATE INDEX IDX_Versions_TimeUTC
+ON {TableName} (TimeUTC)
+";
+
+                cmd.ExecuteNonQuery();
+            }
         }
 
         #endregion
