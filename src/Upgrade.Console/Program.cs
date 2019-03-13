@@ -9,8 +9,7 @@ namespace Upgrade
     class Program
     {
         public const string FullName = "SQL Upgrade Tool";
-
-        //https://blog.terribledev.io/Parsing-cli-arguments-in-dotnet-core-Console-App/
+        
         static void Main(string[] args)
         {
             Console.Title = FullName;
