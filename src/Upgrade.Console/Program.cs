@@ -20,7 +20,7 @@ namespace Upgrade
             var app = new CommandLineApplication();
             app.FullName = FullName;
             app.Name = assemblyName.Name + ".dll";            
-            app.VersionOption("-v | --version", "v"+assemblyName.Version.ToString());
+            app.VersionOption("-v | --version", GetVersion(assemblyName));
             app.HelpOption("-? | -h | --help");
             app.ExtendedHelpText = "\nAuthor: Miro Bozik, http://mirobozik.com";
 
@@ -151,26 +151,10 @@ namespace Upgrade
             Console.ResetColor();
         }
 
-        private static void PrintUsage()
+        private static string GetVersion(AssemblyName assemblyName)
         {
-            var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
-            Console.WriteLine("Usage: dotnet {0}.dll [options]", assemblyName);
-            Console.WriteLine();
-            Console.WriteLine("Options:");
-            Console.WriteLine(
-@"-v, --version <VERSION>                       Version number you want to upgrade target database. Default is '0.0.0'.");
-            Console.WriteLine(
-@"-c, --connectionString <CONNECTION STRING>    Connection string to target database you want to upgrade.");
-            Console.WriteLine(
-@"-d, --directory <DIRECTORY>                   Path to directory with sql scripts. Default is './sql/'.");
-            Console.WriteLine(
-@"-i, --getVersionInfo <true|false>             Get current version info of database schema. Default is false");
-            Console.WriteLine(
-@"--debug <true|false>                          Enable debug mode. Default is false.");
-            Console.WriteLine();
+            return $"{assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}";
         }
-
-        
 
         #endregion
     }
