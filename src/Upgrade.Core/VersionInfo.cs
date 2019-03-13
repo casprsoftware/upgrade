@@ -4,16 +4,14 @@ namespace Upgrade
 {
     public class VersionInfo
     {
-        public int Id { get; set; }
-
-        public string Description { get; set; }
+        public int Id { get; set; }        
 
         // ReSharper disable once InconsistentNaming
         public DateTime TimeUTC { get; set; }
 
         public override string ToString()
         {
-            return $"{Id}, {TimeUTC:G}";
+            return $"v:{Id}, time:{TimeUTC:G}";
         }
     }
 }

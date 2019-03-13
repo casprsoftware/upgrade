@@ -22,7 +22,7 @@ namespace Upgrade
             app.Name = assemblyName.Name + ".dll";            
             app.VersionOption("-v | --version", "v"+assemblyName.Version.ToString());
             app.HelpOption("-? | -h | --help");
-            app.ExtendedHelpText = "Author: Miro Bozik, http://mirobozik.com";
+            app.ExtendedHelpText = "\nAuthor: Miro Bozik, http://mirobozik.com";
 
             app.Command("info", config =>
             {
@@ -34,14 +34,14 @@ namespace Upgrade
                 {                    
                     if (string.IsNullOrEmpty(connectionStringArg.Value))
                     {
-                        Console.WriteLine("No connection string found.");
+                        PrintError("No connection string found.");
                         app.ShowHelp("info");
                         return 1;
                     }
                     
                     var serviceProvider = BuildServiceProvider(
                         connectionStringArg.Value,
-                        "test", //todo
+                        null,
                         true);
 
                     var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
@@ -66,6 +66,8 @@ namespace Upgrade
                 var connectionStringArg = config.Argument("connection-string", "Connection string to database");
                 var directoryArg = config.Argument("directory", "Directory path with sql scripts");
                 var targetVersionArg = config.Argument("target-version", "Target version to upgrade database. Default is latest.");
+                var startVersionArg = config.Argument("start-version", "Start version (optional).");
+                var startFileArg = config.Argument("start-file", "Start file (optional).");
 
                 config.OnExecute(async () =>
                 {
@@ -75,27 +77,23 @@ namespace Upgrade
                         app.ShowHelp("run");
                         return 1;
                     }
-                    
-                    Console.WriteLine(connectionStringArg.Value);
-                    Console.WriteLine(directoryArg.Value);
-                    Console.WriteLine("target: {0}", targetVersionArg.Value);
+
+                    var connectionString = connectionStringArg.Value;
+                    var directory = directoryArg.Value;
+                    var targetVersion = targetVersionArg.ToNullableInt32();
+                    var startVersion = startVersionArg.ToNullableInt32();
+                    var startFile = startFileArg.ToNullableInt32();
                     
                     var serviceProvider = BuildServiceProvider(
-                        connectionStringArg.Value,
-                        directoryArg.Value,
+                        connectionString,
+                        directory,
                         true);
 
                     var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
-                    if (!string.IsNullOrEmpty(targetVersionArg.Value))
-                    {
-                        var targetVersion = int.Parse(targetVersionArg.Value);
-                        await upgradeManager.UpgradeToVersionAsync(
-                            targetVersion: targetVersion);
-                    }
-                    else
-                    {
-                        await upgradeManager.UpgradeToVersionAsync();
-                    }
+                    await upgradeManager.UpgradeToVersionAsync(
+                        targetVersion: targetVersion,
+                        startVersion: startVersion,
+                        startFile: startFile);
 
                     return 0;
                 });

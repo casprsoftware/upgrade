@@ -69,8 +69,7 @@ namespace Upgrade
                     startFromVersion = currentVersion + 1;
 
                     _logger.LogInformation("Current Version: {CurrentVersion}", currentVersion);
-                    _logger.LogInformation("Last Upgrade: {LastUpgrade}", currentVersionInfo.TimeUTC);
-                    _logger.LogInformation("Info: {UpgradeInfo}", currentVersionInfo.Description);
+                    _logger.LogInformation("Last Upgrade: {LastUpgrade}", currentVersionInfo.TimeUTC);                    
                 }
                 else
                 {                    
@@ -163,7 +162,10 @@ Files: {Files}", string.Join(", ", files.Select(f => f.ToString())));
         {
             using (_logger.BeginScope("Get Version"))
             {
-                ValidateOptions(_options);
+                if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+                {
+                    throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.ConnectionString));
+                }
 
                 _logger.LogInformation("STARTED.");
 
@@ -212,6 +214,7 @@ Files: {Files}", string.Join(", ", files.Select(f => f.ToString())));
 
         private IEnumerable<Version> LoadVersions(string directory)
         {
+            _logger.LogDebug("Load versions from directory '{VersionsDirectory}'", directory);
             var versionIds = Directory
                 .GetDirectories(directory)
                 .Select(versionDir =>
