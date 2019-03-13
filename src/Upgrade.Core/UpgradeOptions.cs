@@ -7,11 +7,7 @@ namespace Upgrade
     {
         public const string DefaultDirectory = "./sql/";
 
-        /// <summary>
-        /// Target version to upgrade
-        /// </summary>
-        public int TargetVersion { get; set; }
-
+       
         /// <summary>
         /// Connection string to database
         /// </summary>
@@ -21,15 +17,5 @@ namespace Upgrade
         /// Directory path with sql scripts
         /// </summary>
         public string Directory { get; set; } = DefaultDirectory;
-
-        /// <summary>
-        /// Start from the version
-        /// </summary>
-        public int? StartVersion { get; set; }
-
-        /// <summary>
-        /// Start from the file
-        /// </summary>
-        public int? StartFile { get; set; }
     }
 }

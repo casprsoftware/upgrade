@@ -13,7 +13,7 @@ namespace Upgrade
 
         public override string ToString()
         {
-            return $"{Id} {TimeUTC:G}";
+            return $"{Id}, {TimeUTC:G}";
         }
     }
 }

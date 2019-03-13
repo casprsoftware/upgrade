@@ -12,7 +12,7 @@ namespace Upgrade.Core.Test
             _versionInfo = versionInfo;
         }
 
-        public TestDbProvider() : this(new VersionInfo())
+        public TestDbProvider() : this(null)
         {            
         }
 
@@ -23,6 +23,10 @@ namespace Upgrade.Core.Test
 
         public Task SetSchemaVersionAsync(int version)
         {
+            if (_versionInfo == null)
+            {
+                _versionInfo = new VersionInfo();
+            }
             _versionInfo.Id = version;
             _versionInfo.TimeUTC = DateTime.UtcNow;
             return Task.CompletedTask;
