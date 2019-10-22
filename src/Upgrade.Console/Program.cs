@@ -17,47 +17,94 @@ namespace Upgrade
             Console.Title = FullName;
 
             var assemblyName = Assembly.GetExecutingAssembly().GetName();
-
-            var app = new CommandLineApplication();
-            app.FullName = FullName;
-            app.Name = assemblyName.Name + ".dll";            
-            app.VersionOption("-v | --version", GetVersion(assemblyName));
+            var version = $"{assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}";
+            var app = new CommandLineApplication
+            {
+                FullName = FullName,
+                Name = assemblyName.Name + ".dll",
+                ExtendedHelpText = "\nAuthor: Miro Bozik, https://mirobozik.com"
+            };
+            app.VersionOption("-v | --version", version);
             app.HelpOption("-? | -h | --help");
-            app.ExtendedHelpText = "\nAuthor: Miro Bozik, https://mirobozik.com";
+            
             
             // OPTIONS
-            var directory = app
-                .Option("--directory", "Full path of directory with sql scripts.", CommandOptionType.SingleValue)
-                .Value();
-            var dbProviderOption = app.Option("--db-provider", "Database provider. Default is sql.", CommandOptionType.SingleValue);
+            var isDebugOption = app.Option("--debug", "Enable debug logging.", CommandOptionType.NoValue);
+            var directoryOption = app.Option("--directory", "Full path of directory with sql scripts.", CommandOptionType.SingleValue);
+            //var dbProvider = app.Option("--db-provider", "Database provider. Default is sql.", CommandOptionType.SingleValue).Value();
             var hostOption = app.Option("--host", "Database host name or IP. Default is localhost.", CommandOptionType.SingleValue);
             var portOption = app.Option("--port", "Database port number.", CommandOptionType.SingleValue);
             var dbNameOption = app.Option("--database", "Database name.", CommandOptionType.SingleValue);
             var userOption = app.Option("--username", "Database username.", CommandOptionType.SingleValue);
             var pwdOption = app.Option("--password", "Database password for the username.", CommandOptionType.SingleValue);
+            
             // ARGS
-            var connectionStringArg = app.Argument("connection-string", "Connection string to database. Only for sql provider.");
+            var connectionStringArg = app
+                                    .Argument("connection-string", "Connection string to database. Only for sql provider.")
+                                    ;
 
             app.OnExecute(async () =>
             {
                 if (string.IsNullOrEmpty(connectionStringArg.Value)
-                    || string.IsNullOrEmpty(directory))
+                    || string.IsNullOrEmpty(directoryOption.Value()))
                 {
                     app.ShowHelp();
                     return 1;
                 }
 
-                var connectionString = connectionStringArg.Value;
+                app.Out.WriteLine("SQL Upgrade Tool " + version);
+                app.Out.WriteLine("");
+                app.Out.WriteLine("> directory: " + directoryOption.Value());
+                app.Out.WriteLine("> provider: sql");
 
-                var serviceProvider = BuildServiceProvider(
-                    connectionString,
-                    directory,
-                    true);
-                app.Out.WriteLine("Running..");
+                var services = new ServiceCollection();
+                services.AddLogging(builder =>
+                {
+                    builder.AddFilter(level =>
+                    {
+                        if (!string.IsNullOrEmpty(isDebugOption.Value()) && level == LogLevel.Debug)
+                        {
+                            return true;
+                        }
+
+                        if (level == LogLevel.Information || level == LogLevel.Error || level == LogLevel.Warning)
+                        {
+                            return true;
+                        }
+
+                        return false;
+                    });
+                    builder.AddConsole(o => o.IncludeScopes = true);
+                });
+                services.AddUpgrade(typeof(SqlDbProvider), typeof(DirectorySqlRunner));
+                services.Configure<DirectorySqlRunnerOptions>(directoryOptions =>
+                {
+                    directoryOptions.Directory = directoryOption.Value();
+                });
+                services.Configure<SqlDbProviderOptions>(sqlDbProviderOptions =>
+                {
+                    sqlDbProviderOptions.ConnectionString = connectionStringArg.Value;
+                    sqlDbProviderOptions.Username = userOption.Value();
+                    sqlDbProviderOptions.Password = pwdOption.Value();
+                    sqlDbProviderOptions.Database = dbNameOption.Value();
+                    if (!string.IsNullOrEmpty(hostOption.Value()))
+                    {
+                        sqlDbProviderOptions.Host = hostOption.Value();
+                    }
+
+                    var port = portOption.Value();
+                    if (!string.IsNullOrEmpty(port) && int.TryParse(port, out var portNumber))
+                    {
+                        sqlDbProviderOptions.Port = portNumber;
+                    }
+                });
+                var serviceProvider = services.BuildServiceProvider();
+
                 var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
+                app.Out.WriteLine("Running..");
                 await upgradeManager.RunAsync();
-
-                ((IDisposable)serviceProvider).Dispose();
+                app.Out.WriteLine("Done");
+                serviceProvider.Dispose();
                 return 0;
             });
 
@@ -70,58 +117,5 @@ namespace Upgrade
                 app.ShowHelp();
             }            
         }
-
-        #region Private Methods
-
-        private static IServiceProvider BuildServiceProvider(
-            string connectionString,
-            string directory,            
-            bool isDebugEnabled
-            )
-        {            
-            var services = new ServiceCollection();
-            services.AddLogging(builder =>
-            {
-                builder.AddFilter(level =>
-                {
-                    if (isDebugEnabled && level == LogLevel.Debug)
-                    {
-                        return true;
-                    }
-
-                    if (level == LogLevel.Information || level == LogLevel.Error || level == LogLevel.Warning)
-                    {
-                        return true;
-                    }
-
-                    return false;
-                });
-                builder.AddConsole(o => o.IncludeScopes = true);
-            });
-            services.AddUpgrade(typeof(SqlDbProvider), typeof(DirectorySqlRunner));
-            services.Configure<DirectorySqlRunnerOptions>(directoryOptions =>
-            {
-                directoryOptions.Directory = directory;
-            });
-            services.Configure<SqlDbProviderOptions>(sqlDbProviderOptions =>
-            {
-                sqlDbProviderOptions.ConnectionString = connectionString;
-            });
-            return services.BuildServiceProvider();
-        }
-
-        private static void PrintError(string error)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(error);
-            Console.ResetColor();
-        }
-
-        private static string GetVersion(AssemblyName assemblyName)
-        {
-            return $"{assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}";
-        }
-
-        #endregion
     }
 }
