@@ -1,24 +1,18 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Upgrade
 {
     /// <summary>
     /// DB Provider Functions
     /// </summary>
-    public interface IDbProvider
+    public interface IDbProvider : IDisposable
     {
         /// <summary>
-        /// Get Current Schema Version
+        /// Connect to the Database
         /// </summary>
         /// <returns></returns>
-        Task<VersionInfo> GetSchemaVersionAsync();
-
-        /// <summary>
-        /// Set schema version
-        /// </summary>
-        /// <param name="version">The schema version</param>
-        /// <returns></returns>
-        Task SetSchemaVersionAsync(int version);
+        Task ConnectAsync();
 
         /// <summary>
         /// Execute SQL Script

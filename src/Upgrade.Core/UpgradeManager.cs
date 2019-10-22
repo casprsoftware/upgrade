@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Upgrade
 {
@@ -18,7 +13,7 @@ namespace Upgrade
         
         private readonly ILogger _logger;
         private readonly IDbProvider _dbProvider;
-        private readonly UpgradeOptions _options;
+        private readonly ISqlRunner _sqlRunner;
 
         #endregion
 
@@ -27,10 +22,10 @@ namespace Upgrade
         public UpgradeManager(
             ILoggerFactory loggerFactory, 
             IDbProvider dbProvider,
-            IOptions<UpgradeOptions> upgradeOptionsAccessor)
+            ISqlRunner sqlRunner)
         {
-            _options = upgradeOptionsAccessor.Value;
             _dbProvider = dbProvider;
+            _sqlRunner = sqlRunner;
             _logger = loggerFactory.CreateLogger(typeof(UpgradeManager));
         }
 
@@ -38,219 +33,38 @@ namespace Upgrade
 
         #region Public Methods
 
-        //
-        public async Task UpgradeToVersionAsync(
-            int? targetVersion = null, 
-            int? startVersion = null, 
-            int? startFile = null) 
-        {            
-            ValidateOptions(_options);
-
-            using (_logger.BeginScope("Upgrade"))
-            {
-                _logger.LogDebug($@"with options:
-- {nameof(_options.ConnectionString)}: '{_options.ConnectionString}'
-- {nameof(_options.Directory)}: '{_options.Directory}'
-- {nameof(targetVersion)}: {targetVersion}
-- {nameof(startVersion)}: {startVersion}
-- {nameof(startFile)}: {startFile}");
-
-                
-                string versionsDirectory = _options.Directory.TrimEnd(Path.DirectorySeparatorChar);
-                int startFromVersion = 1;
-                int startFromFile = 1;
-
-                // Get Current version from DB           
-                _logger.LogInformation("Checking current version in database");
-                var currentVersionInfo = await _dbProvider.GetSchemaVersionAsync();
-                if (currentVersionInfo != null)
-                {
-                    var currentVersion = currentVersionInfo.Id;
-                    startFromVersion = currentVersion + 1;
-
-                    _logger.LogInformation("Current Version: {CurrentVersion}", currentVersion);
-                    _logger.LogInformation("Last Upgrade: {LastUpgrade}", currentVersionInfo.TimeUTC);                    
-                }
-                else
-                {                    
-                    _logger.LogWarning("No version info in database.");
-                }
-
-                if (startVersion.HasValue)
-                {
-                    startFromVersion = startVersion.Value;
-                }
-
-                if (startFile.HasValue)
-                {
-                    startFromFile = startFile.Value;
-                }
-
-                // Load all versions
-                var versions = LoadVersions(versionsDirectory);
-
-                // Filter version which will run
-                var executeVersions = versions
-                    .Where(v => v.Id >= startFromVersion);
-                                    
-                if (targetVersion.HasValue)
-                {
-                    executeVersions = executeVersions
-                        .Where(v=> v.Id <= targetVersion.Value);
-                }
-
-                executeVersions = executeVersions
-                    .OrderBy(v => v.Id)
-                    .ToList();
-
-                if (executeVersions.Any())
-                {
-                    _logger.LogInformation(@"Versions to run:
-{VersionRunList}", string.Join(", ", executeVersions.Select(v => v.ToString())));
-
-                    // Execute versions
-                    foreach (var executeVersion in executeVersions)
-                    {
-                        using (_logger.BeginScope("Version {Version}", executeVersion))
-                        {
-                            var files = executeVersion.Files.ToList();
-                            if (executeVersion.Id == startFromVersion)
-                            {
-                                files = executeVersion.Files.Where(f => f.Id >= startFromFile).ToList();
-                            }
-
-                            _logger.LogInformation(@"STARTED: 
-Files: {Files}", string.Join(", ", files.Select(f => f.ToString())));
-
-                            // Run files in version
-                            foreach (var fileInfo in files)
-                            {
-                                using (_logger.BeginScope("File '{SqlFileName}'", fileInfo))
-                                {
-                                    _logger.LogInformation("Executing");
-                                    try
-                                    {
-                                        var sql = File.ReadAllText(fileInfo.FullName, Encoding.UTF8);
-                                        await _dbProvider.ExecuteSqlAsync(sql);
-                                        _logger.LogInformation("Executed successfully.");
-                                    }
-                                    catch (Exception exception)
-                                    {
-                                        _logger.LogError("Executed with an error '{ExceptionMessage}'",
-                                            exception.Message);
-                                        throw new Exception(exception.Message, exception);
-                                    }
-                                }
-                            }
-
-                            // update schema version info                    
-                            await _dbProvider.SetSchemaVersionAsync(executeVersion.Id);
-                            _logger.LogInformation("FINISHED successfully.");
-                        }
-                    }
-                }
-                else
-                {
-                    _logger.LogInformation("Database is up to date. Version {0}", currentVersionInfo);
-                }
-
-                _logger.LogInformation("FINISHED.");
-            }            
-        }
-
-        public async Task<VersionInfo> GetVersionAsync()
+        public async Task RunAsync()
         {
-            using (_logger.BeginScope("Get Version"))
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                if (string.IsNullOrWhiteSpace(_options.ConnectionString))
-                {
-                    throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.ConnectionString));
-                }
+                _logger.LogDebug("RUN START");
+            }
 
-                _logger.LogInformation("STARTED.");
+            try
+            {
+                await _dbProvider.ConnectAsync();
 
+                await _sqlRunner.RunAsync(_dbProvider);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "An error occured while executing upgrade db.");
+            }
+            finally
+            {
                 try
                 {
-                    var versionInfo = await _dbProvider.GetSchemaVersionAsync();
-                    if (versionInfo==null)
-                    {
-                        _logger.LogWarning("No version info.");
-                        _logger.LogInformation("DONE.");
-                        return null;
-                    }
-                    _logger.LogInformation("Version: {Version}, Update Time: {Time}", versionInfo.Id, versionInfo.TimeUTC);
-                    _logger.LogInformation("DONE.");
-                    return versionInfo;
+                    _dbProvider.Dispose();
                 }
-                catch (Exception exception)
+                catch(Exception)
                 {
-                    _logger.LogError("An error: {Error}", exception.Message);
-                    throw;
+                    _logger.LogWarning("Cannot dispose database provider.");
                 }
-            }
-        }
 
-        #endregion
-
-        #region Private Methods
-
-        private void ValidateOptions(UpgradeOptions options)
-        {
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
-            if (string.IsNullOrWhiteSpace(options.ConnectionString))
-            {
-                throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.ConnectionString));
-            }
-
-            if (string.IsNullOrWhiteSpace(options.Directory))
-            {
-                throw new InvalidUpgradeOptionsException(nameof(UpgradeOptions.Directory));
-            }
-        }
-
-        private IEnumerable<Version> LoadVersions(string directory)
-        {
-            _logger.LogDebug("Load versions from directory '{VersionsDirectory}'", directory);
-            var versionIds = Directory
-                .GetDirectories(directory)
-                .Select(versionDir =>
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    var version = versionDir
-                        .Substring(versionDir.LastIndexOf(Path.DirectorySeparatorChar) + 1)
-                        .TrimStart('0');
-                    return Convert.ToInt32(version);
-                });
-
-            foreach (var versionId in versionIds)
-            {
-                var version = new Version { Id = versionId };
-
-                // building full path of the version
-                var fullVersionDir = $"{directory}{Path.DirectorySeparatorChar}{version.Id:000}{Path.DirectorySeparatorChar}";
-                
-                // get all sql files under the version directory
-                version.Files = Directory
-                    .GetFiles(fullVersionDir, "*.sql")
-                    .Select(filePath =>
-                    {
-                        var fileName = filePath.Substring(filePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-                        var fileId = Convert.ToInt32(fileName.Substring(0, fileName.IndexOf('_')).TrimStart('0'));
-                        var sqlFile = new SqlFileInfo
-                        {
-                            Id = fileId,
-                            Name = fileName,
-                            FullName = filePath
-                        };
-                        return sqlFile;
-                    })
-                    .OrderBy(f=>f.Id)
-                    .ToList();                
-
-                yield return version;
+                    _logger.LogDebug("RUN FINISH");
+                }
             }
         }
 

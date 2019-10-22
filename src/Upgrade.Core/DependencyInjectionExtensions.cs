@@ -1,18 +1,20 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Upgrade.Provider;
 
 namespace Upgrade
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddUpgrade(this IServiceCollection services, Action<UpgradeOptions> configure)
+        public static IServiceCollection AddUpgrade(
+            this IServiceCollection services, 
+            Type dbProviderType, Type sqlRunnerType)
         {
             services.AddTransient<UpgradeManager>();
-            services.AddTransient<IDbProvider, SqlDbProvider>();
-            services.Configure(configure);
+            services.AddTransient(typeof(IDbProvider), dbProviderType);
+            services.AddTransient(typeof(ISqlRunner), sqlRunnerType);
 
             return services;
         }
+
     }
 }

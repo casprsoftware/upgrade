@@ -3,6 +3,8 @@ using System.Reflection;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Upgrade.DbProviders;
+using Upgrade.SqlRunners;
 
 namespace Upgrade
 {
@@ -21,81 +23,42 @@ namespace Upgrade
             app.Name = assemblyName.Name + ".dll";            
             app.VersionOption("-v | --version", GetVersion(assemblyName));
             app.HelpOption("-? | -h | --help");
-            app.ExtendedHelpText = "\nAuthor: Miro Bozik, http://mirobozik.com";
+            app.ExtendedHelpText = "\nAuthor: Miro Bozik, https://mirobozik.com";
+            
+            // OPTIONS
+            var directory = app
+                .Option("--directory", "Full path of directory with sql scripts.", CommandOptionType.SingleValue)
+                .Value();
+            var dbProviderOption = app.Option("--db-provider", "Database provider. Default is sql.", CommandOptionType.SingleValue);
+            var hostOption = app.Option("--host", "Database host name or IP. Default is localhost.", CommandOptionType.SingleValue);
+            var portOption = app.Option("--port", "Database port number.", CommandOptionType.SingleValue);
+            var dbNameOption = app.Option("--database", "Database name.", CommandOptionType.SingleValue);
+            var userOption = app.Option("--username", "Database username.", CommandOptionType.SingleValue);
+            var pwdOption = app.Option("--password", "Database password for the username.", CommandOptionType.SingleValue);
+            // ARGS
+            var connectionStringArg = app.Argument("connection-string", "Connection string to database. Only for sql provider.");
 
-            app.Command("info", config =>
+            app.OnExecute(async () =>
             {
-                config.Description = "Get database info (current version, last upgrade time).";
-                config.HelpOption("-? | -h | --help");
-                var connectionStringArg = config.Argument("connection-string", "Connection string for database connection");
-                
-                config.OnExecute(async () =>
-                {                    
-                    if (string.IsNullOrEmpty(connectionStringArg.Value))
-                    {
-                        PrintError("No connection string found.");
-                        app.ShowHelp("info");
-                        return 1;
-                    }
-                    
-                    var serviceProvider = BuildServiceProvider(
-                        connectionStringArg.Value,
-                        null,
-                        true);
-
-                    var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
-                    var versionInfo = await upgradeManager.GetVersionAsync();
-                    if (versionInfo!=null)
-                    {
-                        Console.WriteLine("version: {0}", versionInfo);
-                    }
-                    else
-                    {
-                        Console.WriteLine("No version info found in db.");
-                    }
-                    return 0;
-                });
-            });
-
-            app.Command("run", config =>
-            {
-                config.Description = "Run database upgrade.";
-                config.HelpOption("-? | -h | --help");
-                                
-                var connectionStringArg = config.Argument("connection-string", "Connection string to database");
-                var directoryArg = config.Argument("directory", "Directory path with sql scripts");
-                var targetVersionArg = config.Argument("target-version", "Target version to upgrade database. Default is latest.");
-                var startVersionArg = config.Argument("start-version", "Start version (optional).");
-                var startFileArg = config.Argument("start-file", "Start file (optional).");
-
-                config.OnExecute(async () =>
+                if (string.IsNullOrEmpty(connectionStringArg.Value)
+                    || string.IsNullOrEmpty(directory))
                 {
-                    if (string.IsNullOrEmpty(connectionStringArg.Value)
-                        || string.IsNullOrEmpty(directoryArg.Value))
-                    {
-                        app.ShowHelp("run");
-                        return 1;
-                    }
+                    app.ShowHelp();
+                    return 1;
+                }
 
-                    var connectionString = connectionStringArg.Value;
-                    var directory = directoryArg.Value;
-                    var targetVersion = targetVersionArg.ToNullableInt32();
-                    var startVersion = startVersionArg.ToNullableInt32();
-                    var startFile = startFileArg.ToNullableInt32();
-                    
-                    var serviceProvider = BuildServiceProvider(
-                        connectionString,
-                        directory,
-                        true);
+                var connectionString = connectionStringArg.Value;
 
-                    var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
-                    await upgradeManager.UpgradeToVersionAsync(
-                        targetVersion: targetVersion,
-                        startVersion: startVersion,
-                        startFile: startFile);
+                var serviceProvider = BuildServiceProvider(
+                    connectionString,
+                    directory,
+                    true);
+                app.Out.WriteLine("Running..");
+                var upgradeManager = serviceProvider.GetRequiredService<UpgradeManager>();
+                await upgradeManager.RunAsync();
 
-                    return 0;
-                });
+                ((IDisposable)serviceProvider).Dispose();
+                return 0;
             });
 
             if (args != null && args.Length > 0)
@@ -135,10 +98,14 @@ namespace Upgrade
                 });
                 builder.AddConsole(o => o.IncludeScopes = true);
             });
-            services.AddUpgrade(options =>
+            services.AddUpgrade(typeof(SqlDbProvider), typeof(DirectorySqlRunner));
+            services.Configure<DirectorySqlRunnerOptions>(directoryOptions =>
             {
-                options.ConnectionString = connectionString;
-                options.Directory = directory;
+                directoryOptions.Directory = directory;
+            });
+            services.Configure<SqlDbProviderOptions>(sqlDbProviderOptions =>
+            {
+                sqlDbProviderOptions.ConnectionString = connectionString;
             });
             return services.BuildServiceProvider();
         }
