@@ -1,9 +1,9 @@
-﻿namespace Upgrade.SqlRunners
+﻿namespace Upgrade.SqlScriptSources
 {
     /// <summary>
-    /// Directory SQL Runner Options
+    /// Directory SQL script source options
     /// </summary>
-    public class DirectorySqlRunnerOptions
+    public class DirectorySqlScriptSourceOptions
     {
         /// <summary>
         /// Full path of directory with sql scripts

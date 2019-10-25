@@ -4,13 +4,13 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Upgrade.DbProviders;
-using Upgrade.SqlRunners;
+using Upgrade.SqlScriptSources;
 
 namespace Upgrade
 {
     class Program
     {
-        public const string FullName = "SQL Upgrade Tool";
+        private const string FullName = "SQL Upgrade Tool";
         
         static void Main(string[] args)
         {
@@ -22,16 +22,14 @@ namespace Upgrade
             {
                 FullName = FullName,
                 Name = assemblyName.Name + ".exe",
-                ExtendedHelpText = "\nAuthor: Miro Bozik, https://mirobozik.com"
+                ExtendedHelpText = "\nAuthor: CASPR Software, https://casprsoftware.com"
             };
             app.VersionOption("-v | --version", version);
             app.HelpOption("-? | -h | --help");
-            
-            
+
             // OPTIONS
             var isDebugOption = app.Option("--debug", "Enable debug logging.", CommandOptionType.NoValue);
             var directoryOption = app.Option("--directory", "Full path of directory with sql scripts.", CommandOptionType.SingleValue);
-            //var dbProvider = app.Option("--db-provider", "Database provider. Default is sql.", CommandOptionType.SingleValue).Value();
             var hostOption = app.Option("--host", "Database host name or IP. Default is localhost.", CommandOptionType.SingleValue);
             var portOption = app.Option("--port", "Database port number.", CommandOptionType.SingleValue);
             var dbNameOption = app.Option("--database", "Database name.", CommandOptionType.SingleValue);
@@ -52,7 +50,7 @@ namespace Upgrade
                     return 1;
                 }
 
-                app.Out.WriteLine("SQL Upgrade Tool " + version);
+                app.Out.WriteLine($"{FullName} {version}");
                 app.Out.WriteLine("");
                 app.Out.WriteLine("> directory: " + directoryOption.Value());
                 app.Out.WriteLine("> provider: sql");
@@ -76,8 +74,8 @@ namespace Upgrade
                     });
                     builder.AddConsole(o => o.IncludeScopes = true);
                 });
-                services.AddUpgrade(typeof(SqlDbProvider), typeof(DirectorySqlRunner));
-                services.Configure<DirectorySqlRunnerOptions>(directoryOptions =>
+                services.AddUpgrade(typeof(SqlDbProvider), typeof(DirectorySqlScriptSource));
+                services.Configure<DirectorySqlScriptSourceOptions>(directoryOptions =>
                 {
                     directoryOptions.Directory = directoryOption.Value();
                 });

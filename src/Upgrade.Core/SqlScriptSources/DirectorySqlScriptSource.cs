@@ -5,21 +5,33 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Upgrade.SqlRunners
+namespace Upgrade.SqlScriptSources
 {
-    public class DirectorySqlRunner : ISqlRunner
+    /// <summary>
+    /// Directory SQL script source
+    /// </summary>
+    public class DirectorySqlScriptSource : ISqlScriptSource
     {
-        private readonly ILogger<DirectorySqlRunner> _logger;
-        private readonly DirectorySqlRunnerOptions _options;
+        #region Privates
 
-        public DirectorySqlRunner(
+        private readonly ILogger<DirectorySqlScriptSource> _logger;
+        private readonly DirectorySqlScriptSourceOptions _options;
+
+        #endregion
+
+        #region Constructor
+
+        public DirectorySqlScriptSource(
             ILoggerFactory loggerFactory,
-            IOptions<DirectorySqlRunnerOptions> optionsAccessor)
+            IOptions<DirectorySqlScriptSourceOptions> optionsAccessor)
         {
-            _logger = loggerFactory.CreateLogger<DirectorySqlRunner>();
+            _logger = loggerFactory.CreateLogger<DirectorySqlScriptSource>();
             _options = optionsAccessor.Value;
         }
 
+        #endregion
+
+        /// <inheritdoc cref="ISqlScriptSource.RunAsync"/>
         public async Task RunAsync(IDbProvider dbProvider)
         {
             if (_logger.IsEnabled(LogLevel.Debug))

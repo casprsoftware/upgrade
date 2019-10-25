@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Upgrade
 {
     /// <summary>
-    /// Upgrade Manager
+    /// Upgrade manager
     /// </summary>
     public class UpgradeManager
     {
@@ -13,7 +13,7 @@ namespace Upgrade
         
         private readonly ILogger _logger;
         private readonly IDbProvider _dbProvider;
-        private readonly ISqlRunner _sqlRunner;
+        private readonly ISqlScriptSource _sqlScriptSource;
 
         #endregion
 
@@ -22,10 +22,10 @@ namespace Upgrade
         public UpgradeManager(
             ILoggerFactory loggerFactory, 
             IDbProvider dbProvider,
-            ISqlRunner sqlRunner)
+            ISqlScriptSource sqlScriptSource)
         {
             _dbProvider = dbProvider;
-            _sqlRunner = sqlRunner;
+            _sqlScriptSource = sqlScriptSource;
             _logger = loggerFactory.CreateLogger(typeof(UpgradeManager));
         }
 
@@ -44,7 +44,7 @@ namespace Upgrade
             {
                 await _dbProvider.ConnectAsync();
 
-                await _sqlRunner.RunAsync(_dbProvider);
+                await _sqlScriptSource.RunAsync(_dbProvider);
             }
             catch (Exception e)
             {

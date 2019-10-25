@@ -4,18 +4,18 @@ using System.Threading.Tasks;
 namespace Upgrade
 {
     /// <summary>
-    /// DB Provider Functions
+    /// Database provider interface
     /// </summary>
     public interface IDbProvider : IDisposable
     {
         /// <summary>
-        /// Connect to the Database
+        /// Connect to the database
         /// </summary>
         /// <returns></returns>
         Task ConnectAsync();
 
         /// <summary>
-        /// Execute SQL Script
+        /// Execute SQL script
         /// </summary>
         /// <param name="sql"></param>
         /// <returns></returns>

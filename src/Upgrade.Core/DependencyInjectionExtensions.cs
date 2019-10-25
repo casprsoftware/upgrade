@@ -7,11 +7,11 @@ namespace Upgrade
     {
         public static IServiceCollection AddUpgrade(
             this IServiceCollection services, 
-            Type dbProviderType, Type sqlRunnerType)
+            Type dbProviderType, Type sqlScriptSourceType)
         {
             services.AddTransient<UpgradeManager>();
             services.AddTransient(typeof(IDbProvider), dbProviderType);
-            services.AddTransient(typeof(ISqlRunner), sqlRunnerType);
+            services.AddTransient(typeof(ISqlScriptSource), sqlScriptSourceType);
 
             return services;
         }
