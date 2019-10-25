@@ -256,16 +256,14 @@ paket-files/
 # CodeRush
 .cr/
 
-# Python Tools for Visual Studio (PTVS)
-__pycache__/
-*.pyc
-
-#wwwroot files
-src/Accounts.Server/wwwroot/portal/*.html
-src/Accounts.Server/wwwroot/portal/*.txt
-
 # cake
 tools/Cake
 
 # dist folder
-dist/**
+dist
+
+# vs code
+.vscode
+
+# cake tools
+tools
