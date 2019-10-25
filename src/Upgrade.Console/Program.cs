@@ -21,7 +21,7 @@ namespace Upgrade
             var app = new CommandLineApplication
             {
                 FullName = FullName,
-                Name = assemblyName.Name + ".dll",
+                Name = assemblyName.Name + ".exe",
                 ExtendedHelpText = "\nAuthor: Miro Bozik, https://mirobozik.com"
             };
             app.VersionOption("-v | --version", version);

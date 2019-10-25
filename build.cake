@@ -57,10 +57,10 @@ Task("Default")
         
         var settings = new DotNetCorePublishSettings
         {
-            Framework = "netcoreapp2.1",
             Configuration = configuration,
             OutputDirectory = "dist/console/",
-            NoBuild = true
+            NoBuild = true,
+            Runtime = "win-x64"
         };
 
         DotNetCorePublish("src/Upgrade.Console/Upgrade.Console.csproj", settings);
